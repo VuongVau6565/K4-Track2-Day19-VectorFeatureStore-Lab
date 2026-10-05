@@ -46,7 +46,9 @@ def make_user_profile(n_users: int = 100) -> pl.DataFrame:
             ["ai_ml", "cloud", "security", "database", "devops"][i % 5]
             for i in range(n_users)
         ],
-        "event_timestamp": [NOW - timedelta(hours=i % 48) for i in range(n_users)],
+        "event_timestamp": [
+            NOW - timedelta(days=1, hours=i % 24) for i in range(n_users)
+        ],
     })
 
 
@@ -160,10 +162,18 @@ for i in range(100):
     ).to_dict()
     latencies.append((time.perf_counter() - t0) * 1000)
 
-latencies.sort()
-p50 = latencies[50]
-p95 = latencies[95]
-p99 = latencies[99]
+def percentile(values: list[float], p: float) -> float:
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * p
+    lower = int(position)
+    upper = min(lower + 1, len(ordered) - 1)
+    fraction = position - lower
+    return ordered[lower] + fraction * (ordered[upper] - ordered[lower])
+
+
+p50 = percentile(latencies, 0.50)
+p95 = percentile(latencies, 0.95)
+p99 = percentile(latencies, 0.99)
 print(f"Online lookup latency over 100 calls:")
 print(f"  P50 = {p50:.2f}ms")
 print(f"  P95 = {p95:.2f}ms")
